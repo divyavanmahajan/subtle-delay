@@ -34,7 +34,29 @@ module.exports = {
 1. util - wrapper around the Firebase standard module.
 2. sfquery - Salesforce sub-module.
 2. dbquery - On premise database query assuming an Oracle database.
-3. deltalogic - TODO - Sub module that computes the deltas.
+
+
+## Running the server
+```
+git clone https://github.com/divyavanmahajan/subtle-delay.git
+cd subtle-delay
+npm install
+cd test
+cat >dbconfig.js <<EOF
+module.exports = {
+  dbuser: "system",
+  dbpass: "oracle",
+  dbconnectstring: '192.168.99.100:32769/xe',
+  sfdc_instance_url: "https://philipsb2c.my.salesforce.com",
+  sfdc_oauth: "00Dw0000000Cp29!ARkAQDAuQFMAtPhXnOVerS3NIf8vUsbWIPyxNfM9jMqwk9xvLP_rOYvmjiiRaNF.ch82iQmTQVZGVxqW693Ubviw.V.n1Cxs",
+  sfdc_user: "sf@testuser.com - not used",
+  sfdc_password: "password - not used",
+  firebase_url:'https://intense-torch-3200.firebaseio.com/xcmonitoring/set2',
+  firebase_key:"Not used"
+};
+EOF
+node test.js
+```
 
 
 ## Setting up a database
