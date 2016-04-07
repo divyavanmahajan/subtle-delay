@@ -12,6 +12,8 @@ monitor.config=require('./lib/config.js');
 monitor.util=require('./lib/util.js');
 monitor.sfquery=require('./lib/sfquery.js');
 monitor.dbquery=require('./lib/dbquery.js');
+monitor.sendalert=require('./lib/sendalert.js');
+
 
 /**
  * Setup the configuration for the program usernames, passwords etc.
@@ -29,6 +31,7 @@ monitor.initialize = function(dbconfig) {
         monitor.util.initialize(monitor.config);
         monitor.sfquery.initialize(monitor.config);
         monitor.dbquery.initialize(monitor.config);
+        monitor.sendalert.initialize(monitor.config);
     };
    
 /**
