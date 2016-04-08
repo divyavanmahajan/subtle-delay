@@ -78,6 +78,7 @@ function pollfunction() {
 function compareChanges(timestamp,dbchanges, sfchanges) {
     var map={};
     var missed = [];
+    var sf_missed = [];
     var late = [];
     var okay = [];
     console.log('CompareChanges');
@@ -87,15 +88,18 @@ function compareChanges(timestamp,dbchanges, sfchanges) {
         var record = sfchanges.records[i];
         //console.log(JSON.stringify(record));
         map[record.Id] = record.LastModifiedDate;
-        console.log("     "+record.Id+":"+record.LastModifiedDate);
+        var timestring = moment(record.LastModifiedDate).utc().format('YYYY-MM-DDTHH:mm:ss[Z]');
+        console.log("     "+record.Id+":"+timestring);
     }
     console.log('   Database records');
     for (var j=0;j<dbchanges.length;j++) {
-        console.log('     '+dbchanges[j][0]+":"+dbchanges[j][1]+":"+dbchanges[j][2]);
         var key = dbchanges[j][0];
 
         var lastmodifieddate = dbchanges[j][1];
         var updatedTime = dbchanges[j][2];
+        var db_lastmodified = moment(lastmodifieddate).utc().format('YYYY-MM-DDTHH:mm:ss[Z]');
+        var db_updatedTime = moment(updatedTime).utc().format('YYYY-MM-DDTHH:mm:ss[Z]');
+        console.log('     '+key+":"+db_lastmodified+"  "+db_updatedTime);
         
         var value = map[key];
         if (typeof(value)=='undefined') {
@@ -105,9 +109,7 @@ function compareChanges(timestamp,dbchanges, sfchanges) {
             late.push({'data':dbchanges[j]}); // Push the entire row
         } else {
             var sf_lastmodified = moment(value).utc().format('YYYY-MM-DDTHH:mm:ss[Z]');
-            var db_lastmodified = moment(lastmodifieddate).utc().format('YYYY-MM-DDTHH:mm:ss[Z]');
-            var db_updatedTime = moment(updatedTime).format('YYYY-MM-DDTHH:mm:ss[Z]');
-
+            
             if (sf_lastmodified!=db_lastmodified) {
                 console.log('  Missed: '+key+":"+sf_lastmodified+"/"+lastmodifieddate);
                 // This update did not come through.
@@ -121,8 +123,18 @@ function compareChanges(timestamp,dbchanges, sfchanges) {
                             'db_updatedTime':db_updatedTime,'transit':transit });
                 // ALERTING????
             }
+            delete map[key];
         }
     }
+    var id;
+    for (id in map){
+        // These did not come down to the database.
+        var sf_lastmodified = map[id];
+        console.log('  Missed: '+id+":"+sf_lastmodified);
+                
+        sf_missed.push({'key':id,'sf_lastmodified':sf_lastmodified });
+    }
+
     console.log('   Metrics: okay:'+okay.length+" missed:"+missed.length+" late:"+late.length);        
     console.log('   Late:'+JSON.stringify(late));
     console.log('   Okay:'+JSON.stringify(okay));
@@ -134,7 +146,9 @@ function compareChanges(timestamp,dbchanges, sfchanges) {
     monitor.util.updateFirebase(key, 'ServiceContract_okay', okay.length);
     monitor.util.updateFirebase(key, 'ServiceContract_late', late.length);
     monitor.util.updateFirebase(key, 'ServiceContract_missed', missed.length);
+    monitor.util.updateFirebase(key, 'ServiceContract_sf_missed', sf_missed.length);
     monitor.util.updateFirebase(key, 'ServiceContract_late_records', late);
+    monitor.util.updateFirebase(key, 'ServiceContract_sf_missed_records', sf_missed);
     monitor.util.updateFirebase(key, 'ServiceContract_missed_records', missed);
     monitor.util.updateFirebase(key, 'ServiceContract_okay_records', okay);
     console.log('Finished compare.');
