@@ -53,20 +53,20 @@ function pollfunction() {
     var timestamp = moment();
     var dbchanges;
     var sfchanges;
-    monitor.dbquery.query_all_staging(timestamp, function(metadata, rows) {
+    monitor.dbquery.query_all_staging(timestamp, function(tablename,query,metadata, rows) {
         dbchanges = rows;
-    });
-    monitor.sfquery.querySFChanges(timestamp, function(sf_object, object_name, for_time, query, result) {
-        sfchanges = result;
-        if (sf_object == 'ServiceContract') {
-            console.log('Salesforce returns : ' + query);
-            console.log(JSON.stringify(result));
-            for (var i = 0; i < records.length; i++) {
-                var record = records[i];
-                console.log(JSON.stringify(record));
+        console.log('dbquery:query_all_staging - returns :' + tablename + ":" + rows.length);
+        //console.log(metadata);
+        //console.log(rows);
+        monitor.sfquery.querySFChanges(timestamp, function(sf_object, object_name, for_time, query, result) {
+            sfchanges = result;
+            if (sf_object == 'ServiceContract') {
+                console.log('Salesforce returns : ' + result.totalSize);
+                compareChanges(timestamp,dbchanges,sfchanges);
             }
-        }
+        });
     });
+    
     // TODO: Compare SFChanges and DBChanges
 
     setTimeout(pollfunction, monitor.pollinterval);
@@ -75,36 +75,70 @@ function pollfunction() {
 /**
  * Internal - compare array of changes from Oracle with Salesforce result set.
  */
-function compareChanges(dbchanges, sfchanges) {
+function compareChanges(timestamp,dbchanges, sfchanges) {
     var map={};
     var missed = [];
     var late = [];
     var okay = [];
-    
-    for (var i = 0; i < records.length; i++) {
-        var record = records[i];
-        console.log(JSON.stringify(record));
+    console.log('CompareChanges');
+
+    console.log('   Salesforce records');
+    for (var i = 0; i < sfchanges.records.length; i++) {
+        var record = sfchanges.records[i];
+        //console.log(JSON.stringify(record));
         map[record.Id] = record.LastModifiedDate;
+        console.log("     "+record.Id+":"+record.LastModifiedDate);
     }
+    console.log('   Database records');
     for (var j=0;j<dbchanges.length;j++) {
+        console.log('     '+dbchanges[j][0]+":"+dbchanges[j][1]+":"+dbchanges[j][2]);
         var key = dbchanges[j][0];
+
         var lastmodifieddate = dbchanges[j][1];
+        var updatedTime = dbchanges[j][2];
+        
         var value = map[key];
         if (typeof(value)=='undefined') {
+            console.log('  Late: '+key+":"+value);
             // Database has an update not in salesforce. 
             // Possible cause: Late update - This could be a previous batch that was updated now.
             late.push({'data':dbchanges[j]}); // Push the entire row
         } else {
-            if (value!=lastmodifieddate) {
+            var sf_lastmodified = moment(value).utc().format('YYYY-MM-DDTHH:mm:ss[Z]');
+            var db_lastmodified = moment(lastmodifieddate).utc().format('YYYY-MM-DDTHH:mm:ss[Z]');
+            var db_updatedTime = moment(updatedTime).format('YYYY-MM-DDTHH:mm:ss[Z]');
+
+            if (sf_lastmodified!=db_lastmodified) {
+                console.log('  Missed: '+key+":"+sf_lastmodified+"/"+lastmodifieddate);
                 // This update did not come through.
-                missed.push({'key':key,'timestamp':value});
+                missed.push({'key':key,'sf_lastmodified':sf_lastmodified,'db_lastmodified':db_lastmodified,
+                            'db_updatedTime':db_updatedTime });
             } else {
-                okay.push({'key':key,'timestamp':value,'data':dbchanges[j]});
+                /// NATHANIEL: To calculate transit - db_updatedTime - db_lastmodified.
+                // Look up Momentjs.com to figure out deltas.
+                var transit = -1;
+                okay.push({'key':key,'sf_lastmodified':sf_lastmodified,
+                            'db_updatedTime':db_updatedTime,'transit':transit });
+                // ALERTING????
             }
         }
-        console.log('okay:'+okay.length+" missed:"+missed.length+" late:"+late.length);        
     }
+    console.log('   Metrics: okay:'+okay.length+" missed:"+missed.length+" late:"+late.length);        
+    console.log('   Late:'+JSON.stringify(late));
+    console.log('   Okay:'+JSON.stringify(okay));
+    console.log('   Missed:'+JSON.stringify(missed));
+    var range=monitor.util.getTimeBucket(timestamp);
+    var key = range[1].utc();
+    console.log('   Updating Firebase:'+key.format('YYYY-MM-DDTHH:mm:ss[Z]'));
     
+    monitor.util.updateFirebase(key, 'ServiceContract_okay', okay.length);
+    monitor.util.updateFirebase(key, 'ServiceContract_late', late.length);
+    monitor.util.updateFirebase(key, 'ServiceContract_missed', missed.length);
+    monitor.util.updateFirebase(key, 'ServiceContract_late_records', late);
+    monitor.util.updateFirebase(key, 'ServiceContract_missed_records', missed);
+    monitor.util.updateFirebase(key, 'ServiceContract_okay_records', okay);
+    console.log('Finished compare.');
+       
 }
 
 /**
