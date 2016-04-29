@@ -10,5 +10,8 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 INSTALLDIR="$( cd -P "$( dirname "$SOURCE" )"/.. && pwd )"
 echo $INSTALLDIR
 
-docker run -d -v "$INSTALLDIR:/opt/subtle-delay" collinestes/docker-node-oracle /opt/subtle-delay/bin/run-background.sh
+#docker run -d -v "$INSTALLDIR:/opt/subtle-delay" collinestes/docker-node-oracle /opt/subtle-delay/bin/run-background.sh
+# The Dockerfile for divyavanmahajan/xc-monitor is in ../docker
+# It adds supervisord to restart the node app if it crashes
+docker run -d -v "$INSTALLDIR:/opt/subtle-delay" divyavanmahajan/xc-monitor
 echo Logs are in $INSTALLDIR/bin/logs
