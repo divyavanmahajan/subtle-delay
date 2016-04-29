@@ -92,67 +92,80 @@ function compareChanges(timestamp,dbchanges, sfchanges) {
         console.log("     "+record.Id+":"+timestring);
     }
     console.log('   Database records');
+    var total_latency = 0;
     for (var j=0;j<dbchanges.length;j++) {
         var key = dbchanges[j][0];
 
         var lastmodifieddate = dbchanges[j][1];
         var updatedTime = dbchanges[j][2];
-        var db_lastmodified = moment(lastmodifieddate).utc().format('YYYY-MM-DDTHH:mm:ss[Z]');
-        var db_updatedTime = moment(updatedTime).utc().format('YYYY-MM-DDTHH:mm:ss[Z]');
-        console.log('     '+key+":"+db_lastmodified+"  "+db_updatedTime);
+	var sf_date  = moment(lastmodifieddate).utc()
+	var db_date = moment(updatedTime).utc();
+        var sf_lastmodified = sf_date.utc().format('YYYY-MM-DDTHH:mm:ss[Z]');
+        var db_lastmodified = sf_date.format('YYYY-MM-DDTHH:mm:ss[Z]');
+        var db_updatedTime = db_date.format('YYYY-MM-DDTHH:mm:ss[Z]');
+	var latency = (db_date.toDate() - sf_date.toDate())/1000;
+		total_latency = total_latency + latency;
+	var MAX_SLA_LATENCY=300; // 300s = 5 minutes
+        console.log('     '+key+":"+db_lastmodified+"  "+db_updatedTime+"  "+latency);
         
         var value = map[key];
+	var fbrecord = {'key':key,'db_lastmodified':db_lastmodified,
+                            'db_updatedTime':db_updatedTime,'latency':latency };
+
         if (typeof(value)=='undefined') {
             console.log('  Late: '+key+":"+value);
-            // Database has an update not in salesforce. 
-            // Possible cause: Late update - This could be a previous batch that was updated now.
-            late.push({'data':dbchanges[j]}); // Push the entire row
+            // Database result was is not in Salesforce query. 
+            // It is probably in the previous SF query window.
         } else {
-            var sf_lastmodified = moment(value).utc().format('YYYY-MM-DDTHH:mm:ss[Z]');
+   	    sf_lastmodified = moment(value).utc().format('YYYY-MM-DDTHH:mm:ss[Z]');
+	    fbrecord['sf_lastmodified']=sf_lastmodified;
+	}
+	if (latency > MAX_SLA_LATENCY) {
+            late.push(fbrecord);
+	} else {
             
-            if (sf_lastmodified!=db_lastmodified) {
-                console.log('  Missed: '+key+":"+sf_lastmodified+"/"+lastmodifieddate);
-                // This update did not come through.
-                missed.push({'key':key,'sf_lastmodified':sf_lastmodified,'db_lastmodified':db_lastmodified,
-                            'db_updatedTime':db_updatedTime });
+            if (sf_lastmodified> db_lastmodified) {
+                console.log('  Multiple updates. Latest missed: '+key+": Salesforce - "+sf_lastmodified+" | DB - "+lastmodifieddate);
+                // This update has not come through but an earlier update came in the same window.
+                sf_missed.push({'key':id,'sf_lastmodified':sf_lastmodified });
             } else {
-                /// NATHANIEL: To calculate transit - db_updatedTime - db_lastmodified.
-                // Look up Momentjs.com to figure out deltas.
-                var transit = -1;
-                okay.push({'key':key,'sf_lastmodified':sf_lastmodified,
-                            'db_updatedTime':db_updatedTime,'transit':transit });
-                // ALERTING????
+		// okay.push({'key':key,'sf_lastmodified':sf_lastmodified, 'db_updatedTime':db_updatedTime,'latency':latency });
+		okay.push(fbrecord);
             }
             delete map[key];
         }
     }
     var id;
     for (id in map){
-        // These did not come down to the database.
+        // These did not come down to the database and may be waiting in the queue
         var sf_lastmodified = map[id];
         console.log('  Missed: '+id+":"+sf_lastmodified);
-                
         sf_missed.push({'key':id,'sf_lastmodified':sf_lastmodified });
     }
 
-    console.log('   Metrics: okay:'+okay.length+" missed:"+missed.length+" late:"+late.length);        
-    console.log('   Late:'+JSON.stringify(late));
-    console.log('   Okay:'+JSON.stringify(okay));
-    console.log('   Missed:'+JSON.stringify(missed));
+    var average_latency=0;
     var range=monitor.util.getTimeBucket(timestamp);
     var key = range[1].utc();
+    if (okay.length>0) { average_latency = total_latency / okay.length;}
+    if (late.length>0 || sf_missed.length>0) {
+        var message = '   XC: '+key.format('YYYY-MM-DDTHH:mm:ss[Z]')
+			+'| ok:'+okay.length+" missed:"+sf_missed.length+" late:"+late.length+' latency:'+average_latency;
+        monitor.sendalert.alert('+19785049454',message);
+        monitor.sendalert.alert('+14253810688',message);
+    }
     console.log('   Updating Firebase:'+key.format('YYYY-MM-DDTHH:mm:ss[Z]'));
+    console.log('   Metrics: |'+key.format('YYYY-MM-DDTHH:mm:ss[Z]')
+			+'| okay:'+okay.length+" missed:"+sf_missed.length+" late:"+late.length+' latency:'+average_latency);
+    console.log('   Late:'+JSON.stringify(late));
+    console.log('   Missed:'+JSON.stringify(sf_missed));
     
-    monitor.util.updateFirebase(key, 'ServiceContract_okay', okay.length);
+    monitor.util.updateFirebase(key, 'ServiceContract_latency', average_latency);
     monitor.util.updateFirebase(key, 'ServiceContract_late', late.length);
-    monitor.util.updateFirebase(key, 'ServiceContract_missed', missed.length);
-    monitor.util.updateFirebase(key, 'ServiceContract_sf_missed', sf_missed.length);
+    monitor.util.updateFirebase(key, 'ServiceContract_okay', okay.length);
+    monitor.util.updateFirebase(key, 'ServiceContract_missed', sf_missed.length);
+    monitor.util.updateFirebase(key, 'ServiceContract_missed_records', sf_missed);
     monitor.util.updateFirebase(key, 'ServiceContract_late_records', late);
-    monitor.util.updateFirebase(key, 'ServiceContract_sf_missed_records', sf_missed);
-    monitor.util.updateFirebase(key, 'ServiceContract_missed_records', missed);
-    monitor.util.updateFirebase(key, 'ServiceContract_okay_records', okay);
     console.log('Finished compare.');
-       
 }
 
 /**

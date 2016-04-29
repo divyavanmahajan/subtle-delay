@@ -3,9 +3,11 @@ node_modules
 .DS_Store
 npm-debug.log
 dbconfig.js
+tnsnames.ora
 output.csv
 dump.sql
 dumpdata.sh
 dump.info
-output-20160407.csv
-test/test_alerts.js
+output*.csv
+test/*
+bin/logs/*

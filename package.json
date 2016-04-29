@@ -10,6 +10,9 @@
     "type": "git",
     "url": "git://github.com/divyavanmahajan/subtle-delay.git"
   },
+  "bin": {
+    "monitor-run": "./bin/monitor-run"
+  },
   "bugs": {
     "url": "https://github.com/divyavanmahajan/subtle-delay/issues"
   },

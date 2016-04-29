@@ -1,0 +1,11 @@
+module.exports = {
+dbuser:"Oracle user",
+dbpass:"Oracle passwd",
+dbconnectstring:"Oracle Connect string - from TNSNames.ora",
+sfdc_instance_url:"https://instance.salesforce.com",
+sfdc_oauth:"OAuth Session token",
+firebase_url:'https://yourappname.firebaseio.com/xcmonitoring/dev',
+twilio_accountSid:'Twilio Account SID if you want SMS notifications',
+twilio_authToken:'Twilio Auth Token',
+twilio_phonenumber:'Phone to alert'
+};

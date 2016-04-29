@@ -1,0 +1,11 @@
+# Program:      tnsnames.ora
+#
+# Usage:        Make sure you set TNS_ADMIN to point to the directory this file is in.
+#		Users can modify local aliases to their preference.
+#
+################ SAMPLE REPORTING
+
+SAMPLEDB = (DESCRIPTION =
+    (ADDRESS_LIST = (ADDRESS = (PROTOCOL = TCP)(HOST = 10.14.208.106)(PORT = 1521)))
+    (CONNECT_DATA = (SERVICE_NAME = sample)))
+
