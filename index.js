@@ -145,16 +145,17 @@ function compareChanges(timestamp,dbchanges, sfchanges) {
             if (sf_lastmodified> db_lastmodified) {
                 console.log('  Multiple updates. Latest missed: '+sf_id+": Salesforce - "+sf_lastmodified+" | DB - "+lastmodifieddate);
                 // This update has not come through but an earlier update came in the same window.
-                sf_missed.push({'sf_id':id,'sf_lastmodified':sf_lastmodified });
+                sf_missed.push({'sf_id':sf_id,'sf_lastmodified':sf_lastmodified });
  		try {
-		monitor.util.updateFirebaseString("missed/"+id,sf_lastmodified,1);
+		monitor.util.updateFirebaseString("missed/"+sf_id,sf_lastmodified,1);
 	        } catch (err103) { console.log("   Error updating missed "+id+":"+err103);}
             } else {
 		// okay.push({'sf_id':sf_id,'sf_lastmodified':sf_lastmodified, 'db_updatedTime':db_updatedTime,'latency':latency });
+		//console.log(":::sf_id:"+sf_id+"  fbrecord:"+fbrecord.sf_id);
 		okay.push(fbrecord);
  		try {
-		monitor.util.updateFirebaseString("okay/"+id,sf_lastmodified,latency);
-	        } catch (err103) { console.log("   Error updating missed "+id+":"+err103);}
+		monitor.util.updateFirebaseString("okay/"+sf_id,sf_lastmodified,latency);
+	        } catch (err103) { console.log("   Error updating okay "+sf_id+":"+err103);}
             }
             delete map[sf_id];
         }
