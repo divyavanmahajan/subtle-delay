@@ -122,7 +122,7 @@ function compareChanges(timestamp,dbchanges, sfchanges) {
 
 	// Remove this record id+lastmodified from the missing global list
 	try {
-	console.log('Missed:'+sf_id+' - '+db_lastmodified);
+	// console.log('Missed:'+sf_id+' - '+db_lastmodified);
 	var removekey="missed/"+sf_id+"/"+db_lastmodified;
 	monitor.util.removeFirebaseString(removekey);
 	} catch (err101) { console.log("   Error removing "+removekey+":"+err101);}
