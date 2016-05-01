@@ -8,6 +8,7 @@ main();
 
 function main()
 {
-    monitor.initialize(dbconfig);
-    monitor.server();   
+    monitor.initialize(dbconfig).then(monitor.server,function(err) {
+	console.log(moment()+":"+JSON.stringify(err));   
+    });
 }
