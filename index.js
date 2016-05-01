@@ -31,6 +31,7 @@ monitor.initialize = function(dbconfig) {
         monitor.util.initialize(monitor.config);
         monitor.sfquery.initialize(monitor.config);
         monitor.sendalert.initialize(monitor.config);
+        monitor.sendalert.alert("XC: Monitor starting");
         return monitor.dbquery.initialize(monitor.config);
     };
    
@@ -199,8 +200,8 @@ function compareChanges(timestamp,dbchanges, sfchanges,objectname) {
     if (late.length>0 || sf_missed.length>0) {
         var message = '   XC:'+objectname+': '+timestamp.format('MM-DD HH:mm Z')
 			+'| ok:'+okay.length+" missed:"+sf_missed.length+" late:"+late.length+' latency:'+average_latency;
-        monitor.sendalert.alert('+19785049454',message);
-        monitor.sendalert.alert('+14253810688',message);
+        monitor.sendalert.alert(message);
+        monitor.sendalert.alert(message);
     }
     console.log(moment().format()+":"+'   Metrics: '+objectname+' |'+timestamp.format('YYYY-MM-DDTHH:mm:ss[Z]')
 			+'| okay:'+okay.length+" missed:"+sf_missed.length+" late:"+late.length+' latency:'+average_latency);
