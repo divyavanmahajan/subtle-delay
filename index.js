@@ -202,7 +202,7 @@ function compareChanges(timestamp,dbchanges, sfchanges,objectname) {
         monitor.sendalert.alert('+19785049454',message);
         monitor.sendalert.alert('+14253810688',message);
     }
-    console.log(moment().format()+":"+'   Metrics: |'+timestamp.format('YYYY-MM-DDTHH:mm:ss[Z]')
+    console.log(moment().format()+":"+'   Metrics: +'objectname+' |'+timestamp.format('YYYY-MM-DDTHH:mm:ss[Z]')
 			+'| okay:'+okay.length+" missed:"+sf_missed.length+" late:"+late.length+' latency:'+average_latency);
     console.log(moment().format()+":"+'   Missed:',sf_missed);
     
