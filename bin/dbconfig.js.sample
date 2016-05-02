@@ -9,5 +9,6 @@ firebase_url:'https://yourappname.firebaseio.com/xcmonitoring/dev',
 firebase_secret:'FIREBASE ACCOUNT SECRET',
 twilio_accountSid:'Twilio Account SID if you want SMS notifications',
 twilio_authToken:'Twilio Auth Token',
-twilio_phonenumber:['Phone to alert','Phone 2 to alert']
+twilio_phonenumber:['Phone to alert','Phone 2 to alert'],
+twilio_fromphonenumber:'Phone from - registered in Twilio'
 };
