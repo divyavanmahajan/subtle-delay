@@ -201,7 +201,6 @@ function compareChanges(timestamp,dbchanges, sfchanges,objectname) {
         var message = '   XC:'+objectname+': '+timestamp.format('MM-DD HH:mm Z')
 			+'| ok:'+okay.length+" missed:"+sf_missed.length+" late:"+late.length+' latency:'+average_latency;
         monitor.sendalert.alert(message);
-        monitor.sendalert.alert(message);
     }
     console.log(moment().format()+":"+'   Metrics: '+objectname+' |'+timestamp.format('YYYY-MM-DDTHH:mm:ss[Z]')
 			+'| okay:'+okay.length+" missed:"+sf_missed.length+" late:"+late.length+' latency:'+average_latency);
