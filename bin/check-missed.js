@@ -1,5 +1,6 @@
 // Author: Divya Mahajan
 // Check each missed entry in Firebase and cross check it against Oracle
+// Clear out the missed/ServiceContract and missed/ServiceRole subkeys.
 var moment = require('moment');
 const dbconfig=require('./dbconfig.js')
 const monitor=require('../index.js');
@@ -22,7 +23,6 @@ function update()
 	console.log("T",JSON.stringify(t));
   t.map(function(rec,i) {
 	var rec=t[i];
-	console.log(JSON.stringify(rec));
 	// Check if it is there
 	
 	var ref=missedRef.child(rec.sf_id).child(rec.sf_lastmodified);
@@ -30,8 +30,8 @@ function update()
 	ref.once('value',function(snap) {
 		if (snap.exists()) {
 			ref.set(1).then(function(){
-				console.log(ref.toString());
-				console.log(rec.sf_id,rec.sf_lastmodified,"1");
+				//console.log(ref.toString());
+				//console.log(rec.sf_id,rec.sf_lastmodified,"1");
 				return refu.remove();
 			}).then(function() {
 				console.log(refu.toString(),"cleared");
@@ -45,14 +45,17 @@ function update()
 }
 function check()
 {
-  var missedRef=util.baseRef.child('missed').child('ServiceContract');
+	checkObject('ServiceContract','sfstage.s_servicecontract');
+	checkObject('Service_Role__c','sfstage.s_servicerole');
+}
+function checkObject(objectname,tablename) {
+  var missedRef=util.baseRef.child('missed').child(objectname);
   missedRef.on("child_added",function(dataSnapshot,prevChildKey) {
     if (dataSnapshot.exists()) {
-	
 	missedRef.child(dataSnapshot.key()).once('value', function(snapshot) {
 		var sf_id=snapshot.key();
-		console.log(moment().format()+":Missed Contract.",sf_id,JSON.stringify(snapshot.val())); 
-		dbquery.query_staging_table_single('sfstage.s_servicecontract', 'DB_ServiceContract', sf_id).then(function(res) {
+		//console.log(moment().format()+":Missed Contract.",sf_id,JSON.stringify(snapshot.val())); 
+		dbquery.query_staging_table_single(tablename, 'DB_'+objectname, sf_id).then(function(res) {
 			if (typeof(res)=="undefined") {
 				console.error(moment().format()+":Error during query");
 			}
@@ -63,19 +66,19 @@ function check()
 			var dbchanges = rows;
 			var lastmodifieddate = dbchanges[0][1];
 			var timepart=lastmodifieddate.substring(0,19);
-			console.log(sf_id,lastmodifieddate,timepart);
+			console.log(sf_id,lastmodifieddate);
 			for(var k in snapshot.val()) {
 				k = k.substring(0,19);
 				if (k=="undefined" || k <= timepart)
 				{
-					console.log('  ',k,' is equal or older');
+					console.log('  ',k,' change in Salesforce is updated.');
 					if (k=="undefined") {
-						if (timepart>'2016-05-11') missedRef.child(sf_id).remove();
+						if (timepart>'2016-05') missedRef.child(sf_id).remove();
 					} else {
 						missedRef.child(sf_id).child(k+'Z').remove();
 					}
 				} else {
-					console.log('  ',k,' more recent');
+					console.log('  ',k,' change in Salesforce is is missing');
 				}
 			}
 		});
