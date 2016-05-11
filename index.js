@@ -31,7 +31,6 @@ monitor.initialize = function(dbconfig) {
         monitor.util.initialize(monitor.config);
         monitor.sfquery.initialize(monitor.config);
         monitor.sendalert.initialize(monitor.config);
-        monitor.sendalert.alert("XC: Monitor starting");
         return monitor.dbquery.initialize(monitor.config);
     };
    
