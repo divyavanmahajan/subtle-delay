@@ -189,7 +189,7 @@ function compareChanges(timestamp,dbchanges, sfchanges,objectname) {
         var timestring = moment(map[id]).utc().format('YYYY-MM-DDTHH:mm:ss[Z]');
         sf_missed.push({'sf_id':id,'sf_lastmodified':timestring });
  	try {
-	monitor.util.updateFirebaseString("missed/"+objectname+'/'+id,sf_lastmodified,1);
+	monitor.util.updateFirebaseString("missed/"+objectname+'/'+id,timestring,1);
         } catch (err104) { console.log(moment().format()+":"+"   Error updating missed "+id+":"+err104);}
     }
 
