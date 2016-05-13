@@ -8,7 +8,6 @@ main();
 
 function main()
 {
-    monitor.sendalert.alert("XC: Monitor starting");
     monitor.initialize(dbconfig).then(monitor.server,function(err) {
 	console.log(moment()+":"+JSON.stringify(err));   
     });

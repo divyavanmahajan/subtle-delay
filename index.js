@@ -44,6 +44,7 @@ monitor.pollinterval = 5 * 60 * 1000 - 10000; // Repeat after 4 minutes and 50 s
  */
 
 monitor.server = function() {
+    monitor.sendalert.alert("XC: Monitor starting");
     pollfunction(); // This should never exit
 }
 
