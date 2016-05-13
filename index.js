@@ -195,7 +195,7 @@ function compareChanges(timestamp,dbchanges, sfchanges,objectname) {
     var average_latency=0;
     var range=monitor.util.getTimeBucket(timestamp);
     var timestamp = range[1].utc();
-    if (okay.length>0) { average_latency = total_latency / okay.length;}
+    if (okay.length>0 || late.length>0) { average_latency = total_latency / (okay.length+late.length);}
     if (late.length>0 || sf_missed.length>0) {
         var message = '   XC:'+objectname+': '+timestamp.format('MM-DD HH:mm Z')
 			+'| ok:'+okay.length+" missed:"+sf_missed.length+" late:"+late.length+' latency:'+average_latency;
